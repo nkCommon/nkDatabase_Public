@@ -1,0 +1,48 @@
+from unittest import TestCase
+from NKDatabase.InitialValues.InitialValues import get_unique_app_names, ConfigurationModel
+from pydantic import ValidationError
+
+
+class TestUniqueApps(TestCase):
+    def setUp(self) -> None:
+        self.valid_app_name: str = "nk-edoc-geocoding"
+        self.invalid_app_name: str = "mit-mega-seje-program"
+        self.too_short: str = "kort"
+        self.invalid_debug: str = "False"
+        self.valid_debug: bool = False
+
+    def test_all_apps(self) -> None:
+        """
+        Testing if it returns a set
+        """
+        self.apps = get_unique_app_names()
+        self.assertIsInstance(self.apps, set)
+        # self.assertIsInstance(get_unique_app_names().pop(), str)
+
+    def test_invalid_app_name(self) -> None:
+        """
+        Testing if it raises an error for an invalid app name
+        """
+        with self.assertRaises(ValidationError):
+            validation_model = ConfigurationModel(
+                app_name=self.invalid_app_name, debugging=False
+            )
+
+    def test_valid_app_name(self) -> None:
+        """
+        Testing if it accepts a valid app name
+        """
+        validation_model = ConfigurationModel(
+            appname=self.valid_app_name, debugging=False
+        )
+        self.assertEqual(validation_model.appname, self.valid_app_name)
+        self.assertEqual(validation_model.debugging, False)
+
+    def test_too_short_app_name(self) -> None:
+        """
+        Testing if it raises an error for an app name that's too short
+        """
+        with self.assertRaises(ValidationError):
+            validation_model = ConfigurationModel(
+                appname=self.too_short, debugging=False
+            )
