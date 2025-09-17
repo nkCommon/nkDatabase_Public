@@ -1,6 +1,6 @@
 from datetime import datetime
 import locale
-from pydantic import BaseModel, ValidationError, field_validator, Field, ConfigDict
+from pydantic import BaseModel, model_validator, Field, ConfigDict
 from NKDatabase.NKPostgres.PostgreSQL import (
     connect,
     load_config,
@@ -218,21 +218,18 @@ class ConfigurationModel(BaseModel):
     debugging: bool = False
     ini_file: str = Field(default="database.ini")
 
-    @field_validator('appname', mode='before')
-    @classmethod
-    def app_name_must_be_known(cls, v: str, info) -> str:
+    @model_validator(mode='after')
+    def app_name_must_be_known(self):
         """
         Validating if the app_name is a valid unique app_name
         """
         # Check minimum length first
-        if len(v) < 5:
+        if len(self.appname) < 5:
             raise ValueError("app_name is too short (min 5 chars).")
-        ini_file = info["ini_file"]
-        # Try to validate against known app names, but don't fail if import fails
-        allowed: set[str] = get_unique_app_names(ini_file)
-        if v not in allowed:
-            raise ValueError(f"Invalid app_name '{v}'. Must be one of: {sorted(allowed)}")
-        return v
+        allowed: set[str] = get_unique_app_names(self.ini_file)
+        if self.appname not in allowed:
+            raise ValueError(f"Invalid app_name '{self.appname}'. Must be one of: {sorted(allowed)}")
+        return self
 
 class Configuration:
     """
@@ -249,7 +246,7 @@ class Configuration:
         self.named_attributes = named_attributes
         self.initialized = True
         self.ini_file = ini_file
-        # self.validation_model = ConfigurationModel(appname=appname, debugging=debugging, ini_file=self.ini_file)
+        self.validation_model = ConfigurationModel(appname=appname, debugging=debugging, ini_file=self.ini_file)
         self.configs: dict = get_config(
             appname=appname, debugging=debugging, ini_file=self.ini_file
         )

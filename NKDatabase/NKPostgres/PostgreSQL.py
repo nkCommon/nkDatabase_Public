@@ -29,7 +29,9 @@ def load_config(filename:str = "database.ini", section:str ="postgresql"):
             params = parser.items(section)
             for param in params:
                 config[param[0]] = param[1]
-        return config
+            return config
+        else:
+            raise Exception
     except Exception:
         raise Exception(f"Section {section} not found in the {filename} file")
 

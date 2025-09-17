@@ -15,7 +15,7 @@ class TestUniqueApps(TestCase):
         """
         Testing if it returns a set
         """
-        self.apps = get_unique_app_names()
+        self.apps = get_unique_app_names("/Users/madsd/Desktop/git/_dev/database.ini")
         self.assertIsInstance(self.apps, set)
         # self.assertIsInstance(get_unique_app_names().pop(), str)
 
@@ -25,7 +25,7 @@ class TestUniqueApps(TestCase):
         """
         with self.assertRaises(ValidationError):
             validation_model = ConfigurationModel(
-                app_name=self.invalid_app_name, debugging=False
+                appname=self.invalid_app_name, debugging=False, ini_file="/Users/madsd/Desktop/git/_dev/database.ini"
             )
 
     def test_valid_app_name(self) -> None:
@@ -33,7 +33,8 @@ class TestUniqueApps(TestCase):
         Testing if it accepts a valid app name
         """
         validation_model = ConfigurationModel(
-            appname=self.valid_app_name, debugging=False
+            appname=self.valid_app_name, debugging=False,
+            ini_file="/Users/madsd/Desktop/git/_dev/database.ini"
         )
         self.assertEqual(validation_model.appname, self.valid_app_name)
         self.assertEqual(validation_model.debugging, False)
@@ -46,3 +47,17 @@ class TestUniqueApps(TestCase):
             validation_model = ConfigurationModel(
                 appname=self.too_short, debugging=False
             )
+
+    def test_wrong_input(self) -> None:
+        """
+        Testing, if it throws an error on invalid input-types
+        """
+        with self.assertRaises(ValidationError):
+            ConfigurationModel(appname=1, debugging=True,ini_file="/Users/madsd/Desktop/git/_dev/database.ini")
+
+        with self.assertRaises(ValidationError):
+            ConfigurationModel(appname="testApp", debugging="Ja",ini_file="/Users/madsd/Desktop/git/_dev/database.ini")
+
+        with self.assertRaises(ValidationError):
+            ConfigurationModel(appname="testApp", debugging=True,ini_file=1)
+
