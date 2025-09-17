@@ -59,5 +59,8 @@ class TestUniqueApps(TestCase):
             ConfigurationModel(appname="testApp", debugging="Ja",ini_file="/Users/madsd/Desktop/git/_dev/database.ini")
 
         with self.assertRaises(ValidationError):
+            ConfigurationModel(appname="testApp", debugging="True",ini_file="/Users/madsd/Desktop/git/_dev/database.ini")
+
+        with self.assertRaises(ValidationError):
             ConfigurationModel(appname="testApp", debugging=True,ini_file=1)
 

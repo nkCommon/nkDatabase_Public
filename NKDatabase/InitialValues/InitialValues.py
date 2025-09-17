@@ -1,6 +1,6 @@
 from datetime import datetime
 import locale
-from pydantic import BaseModel, model_validator, Field, ConfigDict
+from pydantic import BaseModel, model_validator, Field, ConfigDict, StrictBool
 from NKDatabase.NKPostgres.PostgreSQL import (
     connect,
     load_config,
@@ -215,7 +215,7 @@ class ConfigurationModel(BaseModel):
     """
     model_config = ConfigDict(extra = "allow")
     appname: str = Field(min_length=5)
-    debugging: bool = False
+    debugging: StrictBool = False
     ini_file: str = Field(default="database.ini")
 
     @model_validator(mode='after')
