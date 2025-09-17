@@ -17,6 +17,7 @@ class TestCustomFileLocation(TestCase):
         Testing if it passes correctly specified app
         """
         self.config = Configuration(
-            self.valid_app_name, self.valid_debug, ini_file="PATH_TO_INI_FILE"
+            self.valid_app_name, self.valid_debug, ini_file="/Users/madsd/Desktop/git/_dev/database.ini"
         )
         self.assertIsInstance(self.config.configs, dict)
+        self.assertTrue(len(self.config.configs.keys()) > 0)

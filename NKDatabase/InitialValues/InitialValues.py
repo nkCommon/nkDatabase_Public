@@ -51,14 +51,14 @@ def get_initial_values(appname: str = "", debugging: bool = False):
     return None
 
 
-def get_unique_app_names() -> set[str]:
+def get_unique_app_names(ini_file: str = "database.ini") -> set[str]:
     """
     Get all unique app names from the database
 
     Returns:
         set[str]: A set of all unique app names
     """
-    config = load_config()
+    config = load_config(filename=ini_file)
     connection = connect(config)
     if connection:
         #   Select the values from the database
@@ -138,7 +138,7 @@ def parse_date(date_str):
 
 def get_config(
     appname: str = "", debugging: bool = False, ini_file: str = "database.ini"
-):
+) -> dict:
     """
     Purpose:
     Get constants for application
@@ -153,7 +153,7 @@ def get_config(
     if appname is not None and len(appname) > 0:
         # print(f'looking up valujes for {appname}')
         constants = {}
-        config = load_config(ini_file)
+        config = load_config(filename=ini_file)
         connection = connect(config)
         if connection:
             # print(f'connection established')
@@ -165,7 +165,7 @@ def get_config(
             for row in rows:
                 constants[row["name"]] = get_parameter_value(row)
             return constants
-    return None
+    return {}
 
 
 def get_parameter_value(row):
@@ -216,19 +216,20 @@ class ConfigurationModel(BaseModel):
     model_config = ConfigDict(extra = "allow")
     appname: str = Field(min_length=5)
     debugging: bool = False
+    ini_file: str = Field(default="database.ini")
 
     @field_validator('appname', mode='before')
     @classmethod
-    def app_name_must_be_known(cls, v: str) -> str:
+    def app_name_must_be_known(cls, v: str, info) -> str:
         """
         Validating if the app_name is a valid unique app_name
         """
         # Check minimum length first
         if len(v) < 5:
             raise ValueError("app_name is too short (min 5 chars).")
-
+        ini_file = info["ini_file"]
         # Try to validate against known app names, but don't fail if import fails
-        allowed: set[str] = get_unique_app_names()
+        allowed: set[str] = get_unique_app_names(ini_file)
         if v not in allowed:
             raise ValueError(f"Invalid app_name '{v}'. Must be one of: {sorted(allowed)}")
         return v
@@ -247,9 +248,10 @@ class Configuration:
     ):
         self.named_attributes = named_attributes
         self.initialized = True
-        self.validation_model = ConfigurationModel(appname=appname, debugging=debugging)
+        self.ini_file = ini_file
+        # self.validation_model = ConfigurationModel(appname=appname, debugging=debugging, ini_file=self.ini_file)
         self.configs: dict = get_config(
-            appname=appname, debugging=debugging, ini_file=ini_file
+            appname=appname, debugging=debugging, ini_file=self.ini_file
         )
         self.set_constants()
 

@@ -5,7 +5,7 @@ from psycopg2.extras import RealDictCursor
 from configparser import ConfigParser
 
 
-def load_config(filename="database.ini", section="postgresql"):
+def load_config(filename:str = "database.ini", section:str ="postgresql"):
     """
     Purpose:
     Used for loading configuration
@@ -16,20 +16,22 @@ def load_config(filename="database.ini", section="postgresql"):
     section -->     Section name of ini file
                     default is postgresgl
     """
-    parser = ConfigParser()
-    parser.read(filename)
+    try:
+        parser = ConfigParser()
+        parser.read(filename)
+    except FileNotFoundError as e:
+        raise e
 
     # get section, default to postgresql
     config = {}
-    if parser.has_section(section):
-        params = parser.items(section)
-        for param in params:
-            config[param[0]] = param[1]
-    else:
+    try:
+        if parser.has_section(section):
+            params = parser.items(section)
+            for param in params:
+                config[param[0]] = param[1]
+        return config
+    except Exception:
         raise Exception(f"Section {section} not found in the {filename} file")
-
-    return config
-
 
 def connect(config):
     """
