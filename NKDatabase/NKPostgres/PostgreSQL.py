@@ -1,11 +1,11 @@
-import psycopg2
+import psycopg
+import psycopg.sql as sql
+from psycopg.rows import dict_row
 from typing import Optional
-from psycopg2 import sql
-from psycopg2.extras import RealDictCursor
 from configparser import ConfigParser
 
 
-def load_config(filename:str = "database.ini", section:str ="postgresql"):
+def load_config(filename:str = "database.ini", section:str ="postgresql") -> dict[str, any]:
     """
     Purpose:
     Used for loading configuration
@@ -45,13 +45,12 @@ def connect(config):
     """
     try:
         # connecting to the PostgreSQL server
-        with psycopg2.connect(**config) as conn:
-            return conn
-    except (psycopg2.DatabaseError, Exception) as error:
-        print(error)
+        conn = psycopg.connect(**config)
+        return conn
+    except (psycopg.DatabaseError, Exception) as error:
+        raise error
 
-
-def execute_query(conn, query, params=None):
+def execute_query(conn: psycopg.Connection, query: str, params=None):
     """Execute a single query"""
     with conn.cursor() as cur:
         cur.execute(query, params)
@@ -59,7 +58,7 @@ def execute_query(conn, query, params=None):
         print("Query executed successfully.")
 
 
-def fetch_query(conn, query, params=None):
+def fetch_query(conn: psycopg.Connection, query: str, params=None):
     """Execute a query and fetch results"""
     with conn.cursor() as cur:
         cur.execute(query, params)
@@ -67,14 +66,14 @@ def fetch_query(conn, query, params=None):
         return result
 
 
-def insert_data(conn, table, columns, values):
+def insert_data(conn: psycopg.Connection, table: str, columns: list[str], values: list[any]):
     """Insert data into a table"""
     query = f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(values))})"
     execute_query(conn, query, values)
 
 
 def update_data(
-    conn, table, set_columns, set_values, condition_column, condition_value
+    conn: psycopg.Connection, table: str, set_columns: list[str], set_values: list[any], condition_column: str, condition_value: any
 ):
     """Update data in a table"""
     set_clause = ", ".join([f"{col} = %s" for col in set_columns])
@@ -82,13 +81,13 @@ def update_data(
     execute_query(conn, query, set_values + [condition_value])
 
 
-def delete_data(conn, table, condition_column, condition_value):
+def delete_data(conn: psycopg.Connection, table: str, condition_column: str, condition_value: any):
     """Delete data from a table"""
     query = f"DELETE FROM {table} WHERE {condition_column} = %s"
     execute_query(conn, query, (condition_value,))
 
 
-def select_with_conditions(conn, schema_name, table_name, where_conditions=None):
+def select_with_conditions(conn: psycopg.Connection, schema_name: str, table_name: str, where_conditions: dict[str, any] = None):
     """
     Select rows from a table with dynamic WHERE conditions.
 
@@ -102,7 +101,7 @@ def select_with_conditions(conn, schema_name, table_name, where_conditions=None)
     list: A list of dictionaries representing the rows that match the conditions.
     """
     try:
-        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+        with conn.cursor(row_factory=dict_row) as cursor:
             # Start building the query
             query = sql.SQL("SELECT * FROM {schema}.{table}").format(
                 schema=sql.Identifier(schema_name), table=sql.Identifier(table_name)
@@ -131,7 +130,7 @@ def select_with_conditions(conn, schema_name, table_name, where_conditions=None)
 
 
 def update_or_insert_vectordata(
-    conn,
+    conn: psycopg.Connection,
     schema_name,
     table_name,
     id,
